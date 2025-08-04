@@ -1,0 +1,45 @@
+global_defs {
+    script_user root
+    enable_script_security
+}
+
+vrrp_script chk_nginx {
+    script "/usr/bin/pgrep nginx"
+    interval 2
+    weight 5
+}
+
+# Check if Tomcat is running
+vrrp_script chk_tomcat {
+    script "/etc/keepalived/chk_tomcat.sh"
+    interval 2
+    weight 5
+}
+
+# Check if PostgreSQL (DB) is in read-write mode (master)
+vrrp_script chk_postgresql {
+    script "/etc/keepalived/chk_postgresql.sh"
+    interval 2
+    weight 5 # Adjust based on importance of database availability
+}
+
+vrrp_instance VI_1 {
+    state MASTER
+    interface ens192               # Correct interface name
+    virtual_router_id 55
+    priority 104                    
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1234
+    }
+    virtual_ipaddress {
+        192.168.*.*
+    }
+    track_script {
+        chk_nginx
+        chk_tomcat
+        chk_postgresql
+    }
+}
+
